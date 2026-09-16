@@ -70,6 +70,18 @@ class TaskServiceTest {
     }
 
     @Test
+    void getTaskById_shouldReturnEmptyWhenTaskNotFound() {
+    when(taskRepository.findById(1L))
+            .thenReturn(Optional.empty());
+
+    Optional<Task> result = taskService.getTaskById(1L);
+
+    assertTrue(result.isEmpty());
+
+    verify(taskRepository, times(1)).findById(1L);
+    }
+
+    @Test
     void updateTask_shouldUpdateAndReturnTaskWhenFound() {
         Task existingTask = new Task();
         existingTask.setTitle("Old title");
