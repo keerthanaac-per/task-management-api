@@ -3,7 +3,6 @@ package com.keerthanaa.task_management_api.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-import jakarta.validation.constraints.NotBlank;
 
 @Entity
 @Table(name = "tasks")
