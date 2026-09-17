@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +38,33 @@ class TaskServiceTest {
         assertNotNull(result);
         assertEquals("Learn Spring Boot", result.getTitle());
         verify(taskRepository, times(1)).save(task);
+    }
+
+    @Test
+    void createTask_shouldThrowExceptionWhenSaveFails() {
+    Task task = new Task();
+    task.setTitle("Learn Spring Boot");
+
+    when(taskRepository.save(task))
+            .thenThrow(new RuntimeException("Database error"));
+
+    assertThrows(RuntimeException.class, () -> {
+        taskService.createTask(task);
+    });
+
+    verify(taskRepository, times(1)).save(task);
+    }
+
+    @Test
+    void getAllTasks_shouldReturnEmptyListWhenNoTasks() {
+    when(taskRepository.findAll())
+            .thenReturn(List.of());
+
+    List<Task> result = taskService.getAllTasks();
+
+    assertTrue(result.isEmpty());
+
+    verify(taskRepository, times(1)).findAll();
     }
 
     @Test
@@ -109,6 +137,26 @@ class TaskServiceTest {
 
         verify(taskRepository, times(1)).findById(1L);
         verify(taskRepository, times(1)).save(existingTask);
+    }
+
+    @Test
+    void updateTask_shouldReturnEmptyWhenTaskNotFound() {
+    Task updatedTask = new Task();
+    updatedTask.setTitle("New title");
+    updatedTask.setDescription("New description");
+    updatedTask.setCompleted(true);
+
+    when(taskRepository.findById(1L))
+            .thenReturn(Optional.empty());
+
+    Optional<Task> result =
+            taskService.updateTask(1L, updatedTask);
+
+    assertTrue(result.isEmpty());
+
+    verify(taskRepository, times(1)).findById(1L);
+
+    verify(taskRepository, never()).save(any(Task.class));
     }
 
     @Test
