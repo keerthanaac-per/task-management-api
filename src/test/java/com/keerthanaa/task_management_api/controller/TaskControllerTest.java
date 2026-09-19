@@ -1,8 +1,11 @@
 
 package com.keerthanaa.task_management_api.controller;
 
+import com.keerthanaa.task_management_api.dto.TaskRequest;
+import com.keerthanaa.task_management_api.dto.TaskResponse;
 import com.keerthanaa.task_management_api.entity.Task;
 import com.keerthanaa.task_management_api.exception.TaskNotFoundException;
+import com.keerthanaa.task_management_api.mapper.TaskMapper;
 import com.keerthanaa.task_management_api.service.TaskService;
 
 import org.junit.jupiter.api.Test;
@@ -31,8 +34,23 @@ class TaskControllerTest {
     @MockitoBean
     private TaskService taskService;
 
+    @MockitoBean
+    private TaskMapper taskMapper;
+
     @Test
     void getAllTasks_shouldReturnTasks() throws Exception {
+
+        TaskResponse response1 = new TaskResponse();
+        response1.setId(1L);
+        response1.setTitle("Learn Spring Boot");
+        response1.setDescription("Build REST APIs");
+        response1.setCompleted(false);
+
+        TaskResponse response2 = new TaskResponse();
+        response2.setId(2L);
+        response2.setTitle("Learn Testing");
+        response2.setDescription("Build REST APIs with test");
+        response2.setCompleted(true);
 
         Task task1 = new Task();
         task1.setTitle("Learn Spring Boot");
@@ -40,6 +58,14 @@ class TaskControllerTest {
         Task task2 = new Task();
         task2.setTitle("Learn Testing");
 
+
+        when(taskMapper.toResponse(task1))
+                .thenReturn(response1);
+
+        when(taskMapper.toResponse(task2))
+                .thenReturn(response2);
+
+       
         when(taskService.getAllTasks())
                 .thenReturn(List.of(task1, task2));
 
@@ -62,8 +88,17 @@ class TaskControllerTest {
     task.setDescription("Practice controller testing");
     task.setCompleted(false);
 
+    TaskResponse response = new TaskResponse();
+    response.setId(1L);
+    response.setTitle("Learn MockMvc");
+    response.setDescription("Practice controller testing");
+    response.setCompleted(false);
+
     when(taskService.getTaskById(1L))
             .thenReturn(task);
+
+    when(taskMapper.toResponse(task))
+        .thenReturn(response);
 
     mockMvc.perform(get("/api/tasks/1"))
             .andExpect(status().isOk())
@@ -100,8 +135,20 @@ void createTask_shouldReturnCreatedTask() throws Exception {
     task.setDescription("Build REST APIs");
     task.setCompleted(false);
 
+    TaskResponse response = new TaskResponse();
+    response.setId(1L);
+    response.setTitle("Learn Spring Boot");
+    response.setDescription("Build REST APIs");
+    response.setCompleted(false);
+
     when(taskService.createTask(any(Task.class)))
             .thenReturn(task);
+
+    when(taskMapper.toEntity(any(TaskRequest.class)))
+            .thenReturn(task);
+
+    when(taskMapper.toResponse(task))
+           .thenReturn(response);
 
     mockMvc.perform(post("/api/tasks")
                     .contentType("application/json")
@@ -170,14 +217,31 @@ void deleteTask_shouldReturnNotFoundWhenTaskDoesNotExist() throws Exception {
 @Test
 void updateTask_shouldReturnUpdatedTaskWhenTaskExists() throws Exception {
 
-    Task updatedTask = new Task();
-    updatedTask.setId(1L);
-    updatedTask.setTitle("Updated Task");
-    updatedTask.setDescription("Updated description");
-    updatedTask.setCompleted(true);
+    Task task = new Task();
+task.setTitle("Updated Task");
+task.setDescription("Updated description");
+task.setCompleted(true);
 
-    when(taskService.updateTask(eq(1L), any(Task.class)))
-            .thenReturn(updatedTask);
+Task updatedTask = new Task();
+updatedTask.setId(1L);
+updatedTask.setTitle("Updated Task");
+updatedTask.setDescription("Updated description");
+updatedTask.setCompleted(true);
+
+TaskResponse response = new TaskResponse();
+response.setId(1L);
+response.setTitle("Updated Task");
+response.setDescription("Updated description");
+response.setCompleted(true);
+
+when(taskMapper.toEntity(any(TaskRequest.class)))
+        .thenReturn(task);
+
+when(taskService.updateTask(eq(1L), any(Task.class)))
+        .thenReturn(updatedTask);
+
+when(taskMapper.toResponse(updatedTask))
+        .thenReturn(response);
 
     mockMvc.perform(put("/api/tasks/1")
                     .contentType("application/json")
@@ -204,8 +268,14 @@ void updateTask_shouldReturnUpdatedTaskWhenTaskExists() throws Exception {
 @Test
 void updateTask_shouldReturnNotFoundWhenTaskDoesNotExist() throws Exception {
 
-    when(taskService.updateTask(eq(1L), any(Task.class)))
-            .thenThrow(new TaskNotFoundException(1L));
+    Task task = new Task();
+
+when(taskMapper.toEntity(any(TaskRequest.class)))
+        .thenReturn(task);
+
+when(taskService.updateTask(eq(1L), any(Task.class)))
+        .thenThrow(new TaskNotFoundException(1L));
+
 
     mockMvc.perform(put("/api/tasks/1")
                     .contentType("application/json")

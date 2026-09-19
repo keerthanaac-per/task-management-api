@@ -1,6 +1,9 @@
 package com.keerthanaa.task_management_api.controller;
 
+import com.keerthanaa.task_management_api.dto.TaskRequest;
+import com.keerthanaa.task_management_api.dto.TaskResponse;
 import com.keerthanaa.task_management_api.entity.Task;
+import com.keerthanaa.task_management_api.mapper.TaskMapper;
 import com.keerthanaa.task_management_api.service.TaskService;
 
 import jakarta.validation.Valid;
@@ -16,33 +19,54 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final TaskMapper taskMapper;
 
-    public TaskController(TaskService taskService) {
-        this.taskService = taskService;
+    public TaskController(
+        TaskService taskService,
+        TaskMapper taskMapper) {
+
+    this.taskService = taskService;
+    this.taskMapper = taskMapper;
     }
+   @PostMapping
+   @ResponseStatus(HttpStatus.CREATED)
+   public TaskResponse createTask(
+        @Valid @RequestBody TaskRequest request) {
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Task createTask(@Valid @RequestBody Task task) {
-        return taskService.createTask(task);
+    Task task = taskMapper.toEntity(request);
+
+    return taskMapper.toResponse(
+        taskService.createTask(task));
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
-        return taskService.getAllTasks();
+    public List<TaskResponse> getAllTasks() {
+
+    return taskService.getAllTasks()
+            .stream()
+            .map(taskMapper::toResponse)
+            .toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
-    return ResponseEntity.ok(taskService.getTaskById(id));
-    }
-    
-    @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(
-        @PathVariable Long id,
-        @Valid @RequestBody Task task) {
+    public ResponseEntity<TaskResponse> getTaskById(
+        @PathVariable Long id) {
 
-    return ResponseEntity.ok(taskService.updateTask(id, task));
+    Task task = taskService.getTaskById(id);
+
+    return ResponseEntity.ok(taskMapper.toResponse(task));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TaskResponse> updateTask(
+        @PathVariable Long id,
+        @Valid @RequestBody TaskRequest request) {
+
+    Task task = taskMapper.toEntity(request);
+
+    Task updatedTask = taskService.updateTask(id, task);
+
+    return ResponseEntity.ok(taskMapper.toResponse(updatedTask));
     }
 
     @DeleteMapping("/{id}")
