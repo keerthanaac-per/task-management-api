@@ -2,6 +2,7 @@
 package com.keerthanaa.task_management_api.controller;
 
 import com.keerthanaa.task_management_api.entity.Task;
+import com.keerthanaa.task_management_api.exception.TaskNotFoundException;
 import com.keerthanaa.task_management_api.service.TaskService;
 
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ class TaskControllerTest {
     task.setCompleted(false);
 
     when(taskService.getTaskById(1L))
-            .thenReturn(java.util.Optional.of(task));
+            .thenReturn(task);
 
     mockMvc.perform(get("/api/tasks/1"))
             .andExpect(status().isOk())
@@ -80,10 +81,12 @@ class TaskControllerTest {
 void getTaskById_shouldReturnNotFoundWhenTaskDoesNotExist() throws Exception {
 
     when(taskService.getTaskById(1L))
-            .thenReturn(java.util.Optional.empty());
+            .thenThrow(new TaskNotFoundException(1L));
 
     mockMvc.perform(get("/api/tasks/1"))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.error")
+                    .value("Task not found with id: 1"));
 
     verify(taskService, times(1)).getTaskById(1L);
 }
@@ -174,7 +177,7 @@ void updateTask_shouldReturnUpdatedTaskWhenTaskExists() throws Exception {
     updatedTask.setCompleted(true);
 
     when(taskService.updateTask(eq(1L), any(Task.class)))
-            .thenReturn(java.util.Optional.of(updatedTask));
+            .thenReturn(updatedTask);
 
     mockMvc.perform(put("/api/tasks/1")
                     .contentType("application/json")
@@ -202,7 +205,7 @@ void updateTask_shouldReturnUpdatedTaskWhenTaskExists() throws Exception {
 void updateTask_shouldReturnNotFoundWhenTaskDoesNotExist() throws Exception {
 
     when(taskService.updateTask(eq(1L), any(Task.class)))
-            .thenReturn(java.util.Optional.empty());
+            .thenThrow(new TaskNotFoundException(1L));
 
     mockMvc.perform(put("/api/tasks/1")
                     .contentType("application/json")
@@ -213,7 +216,9 @@ void updateTask_shouldReturnNotFoundWhenTaskDoesNotExist() throws Exception {
                                 "completed": true
                             }
                             """))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.error")
+                    .value("Task not found with id: 1"));
 
     verify(taskService, times(1))
             .updateTask(eq(1L), any(Task.class));

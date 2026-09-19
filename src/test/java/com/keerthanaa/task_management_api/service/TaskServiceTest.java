@@ -1,6 +1,7 @@
 package com.keerthanaa.task_management_api.service;
 
 import com.keerthanaa.task_management_api.entity.Task;
+import com.keerthanaa.task_management_api.exception.TaskNotFoundException;
 import com.keerthanaa.task_management_api.repository.TaskRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -85,62 +86,62 @@ class TaskServiceTest {
 
     @Test
     void getTaskById_shouldReturnTaskWhenFound() {
-        Task task = new Task();
-        task.setTitle("Find this task");
+    Task task = new Task();
+    task.setTitle("Find this task");
 
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
+    when(taskRepository.findById(1L)).thenReturn(Optional.of(task));
 
-        Optional<Task> result = taskService.getTaskById(1L);
+    Task result = taskService.getTaskById(1L);
 
-        assertTrue(result.isPresent());
-        assertEquals("Find this task", result.get().getTitle());
-        verify(taskRepository, times(1)).findById(1L);
+    assertEquals("Find this task", result.getTitle());
+    verify(taskRepository, times(1)).findById(1L);
     }
 
     @Test
-    void getTaskById_shouldReturnEmptyWhenTaskNotFound() {
+    void getTaskById_shouldThrowExceptionWhenTaskNotFound() {
+
     when(taskRepository.findById(1L))
             .thenReturn(Optional.empty());
 
-    Optional<Task> result = taskService.getTaskById(1L);
-
-    assertTrue(result.isEmpty());
+    assertThrows(
+            TaskNotFoundException.class,
+            () -> taskService.getTaskById(1L)
+    );
 
     verify(taskRepository, times(1)).findById(1L);
     }
 
     @Test
     void updateTask_shouldUpdateAndReturnTaskWhenFound() {
-        Task existingTask = new Task();
-        existingTask.setTitle("Old title");
-        existingTask.setDescription("Old description");
-        existingTask.setCompleted(false);
+    Task existingTask = new Task();
+    existingTask.setTitle("Old title");
+    existingTask.setDescription("Old description");
+    existingTask.setCompleted(false);
 
-        Task updatedTask = new Task();
-        updatedTask.setTitle("New title");
-        updatedTask.setDescription("New description");
-        updatedTask.setCompleted(true);
+    Task updatedTask = new Task();
+    updatedTask.setTitle("New title");
+    updatedTask.setDescription("New description");
+    updatedTask.setCompleted(true);
 
-        when(taskRepository.findById(1L))
-                .thenReturn(Optional.of(existingTask));
+    when(taskRepository.findById(1L))
+            .thenReturn(Optional.of(existingTask));
 
-        when(taskRepository.save(existingTask))
-                .thenReturn(existingTask);
+    when(taskRepository.save(existingTask))
+            .thenReturn(existingTask);
 
-        Optional<Task> result =
-                taskService.updateTask(1L, updatedTask);
+    Task result =
+            taskService.updateTask(1L, updatedTask);
 
-        assertTrue(result.isPresent());
-        assertEquals("New title", result.get().getTitle());
-        assertEquals("New description", result.get().getDescription());
-        assertTrue(result.get().isCompleted());
+    assertEquals("New title", result.getTitle());
+    assertEquals("New description", result.getDescription());
+    assertTrue(result.isCompleted());
 
-        verify(taskRepository, times(1)).findById(1L);
-        verify(taskRepository, times(1)).save(existingTask);
+    verify(taskRepository, times(1)).findById(1L);
+    verify(taskRepository, times(1)).save(existingTask);
     }
 
     @Test
-    void updateTask_shouldReturnEmptyWhenTaskNotFound() {
+    void updateTask_shouldThrowExceptionWhenTaskNotFound() {
     Task updatedTask = new Task();
     updatedTask.setTitle("New title");
     updatedTask.setDescription("New description");
@@ -149,13 +150,12 @@ class TaskServiceTest {
     when(taskRepository.findById(1L))
             .thenReturn(Optional.empty());
 
-    Optional<Task> result =
-            taskService.updateTask(1L, updatedTask);
-
-    assertTrue(result.isEmpty());
+    assertThrows(
+            TaskNotFoundException.class,
+            () -> taskService.updateTask(1L, updatedTask)
+    );
 
     verify(taskRepository, times(1)).findById(1L);
-
     verify(taskRepository, never()).save(any(Task.class));
     }
 

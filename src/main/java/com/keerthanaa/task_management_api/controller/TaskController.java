@@ -34,19 +34,15 @@ public class TaskController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
-    return taskService.getTaskById(id)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+    return ResponseEntity.ok(taskService.getTaskById(id));
     }
-
+    
     @PutMapping("/{id}")
     public ResponseEntity<Task> updateTask(
         @PathVariable Long id,
         @Valid @RequestBody Task task) {
 
-    return taskService.updateTask(id, task)
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.notFound().build());
+    return ResponseEntity.ok(taskService.updateTask(id, task));
     }
 
     @DeleteMapping("/{id}")

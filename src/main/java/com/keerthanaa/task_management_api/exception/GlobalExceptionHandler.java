@@ -12,6 +12,8 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+     // Validation errors → 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationErrors(
@@ -27,4 +29,16 @@ public class GlobalExceptionHandler {
 
         return errors;
     }
+
+    // Task not found → 404
+    @ExceptionHandler(TaskNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleTaskNotFound(TaskNotFoundException exception) {
+
+        Map<String, String> error = new HashMap<>();
+
+        error.put("error", exception.getMessage());
+
+        return error;
+    }       
 }
