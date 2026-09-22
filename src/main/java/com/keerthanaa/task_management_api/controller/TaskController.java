@@ -6,6 +6,8 @@ import com.keerthanaa.task_management_api.dto.TaskResponse;
 import com.keerthanaa.task_management_api.entity.Task;
 import com.keerthanaa.task_management_api.mapper.TaskMapper;
 import com.keerthanaa.task_management_api.service.TaskService;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import jakarta.validation.Valid;
 
@@ -13,8 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -46,9 +46,11 @@ public class TaskController {
     @GetMapping
     public PageResponse<TaskResponse> getAllTasks(
             @RequestParam(required = false) String title,
-            Pageable pageable) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-    Page<Task> taskPage = taskService.searchTasks(title,pageable);
+     Pageable pageable = PageRequest.of(page, size);
+     Page<Task> taskPage = taskService.searchTasks(title,pageable);
 
     List<TaskResponse> content = taskPage.getContent()
             .stream()
