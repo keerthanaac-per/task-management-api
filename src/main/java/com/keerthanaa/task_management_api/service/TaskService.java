@@ -4,6 +4,8 @@ import com.keerthanaa.task_management_api.entity.Task;
 import com.keerthanaa.task_management_api.exception.TaskNotFoundException;
 import com.keerthanaa.task_management_api.repository.TaskRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -20,9 +22,18 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    public Page<Task> getAllTasks(Pageable pageable) {
+        return taskRepository.findAll(pageable);
     }
+
+    public Page<Task> searchTasks(String title, Pageable pageable) {
+
+    if (title == null || title.isBlank()) {
+        return taskRepository.findAll(pageable);
+    }
+
+    return taskRepository.findByTitleContainingIgnoreCase(title, pageable);
+}
 
     public Task getTaskById(Long id) {
     return taskRepository.findById(id)

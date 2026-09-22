@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,10 +16,15 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class TaskServiceTest {
 
+    Pageable pageable = PageRequest.of(0, 10);
     @Mock
     private TaskRepository taskRepository;
 
@@ -58,14 +64,14 @@ class TaskServiceTest {
 
     @Test
     void getAllTasks_shouldReturnEmptyListWhenNoTasks() {
-    when(taskRepository.findAll())
-            .thenReturn(List.of());
+    when(taskRepository.findAll(pageable))
+            .thenReturn(Page.empty(pageable));
 
-    List<Task> result = taskService.getAllTasks();
+    Page<Task> result = taskService.getAllTasks(pageable);
 
-    assertTrue(result.isEmpty());
+    assertTrue(result.getContent().isEmpty());
 
-    verify(taskRepository, times(1)).findAll();
+    verify(taskRepository, times(1)).findAll(pageable);
     }
 
     @Test
@@ -76,13 +82,48 @@ class TaskServiceTest {
         Task task2 = new Task();
         task2.setTitle("Task 2");
 
-        when(taskRepository.findAll()).thenReturn(List.of(task1, task2));
+        Page<Task> taskPage = new PageImpl<>(
+        List.of(task1, task2),
+        pageable,
+        2
+        );
 
-        List<Task> result = taskService.getAllTasks();
+        when(taskRepository.findAll(pageable))
+            .thenReturn(taskPage);
 
-        assertEquals(2, result.size());
-        verify(taskRepository, times(1)).findAll();
+        Page<Task> result = taskService.getAllTasks(pageable);
+
+        assertEquals(2, result.getContent().size());
+        assertEquals("Task 1", result.getContent().get(0).getTitle());
+        assertEquals("Task 2", result.getContent().get(1).getTitle());
+        verify(taskRepository, times(1)).findAll(pageable);
     }
+
+    @Test
+void searchTasks_shouldReturnMatchingTasks() {
+
+    Task task = new Task();
+    task.setTitle("Practice Java");
+
+    Page<Task> taskPage = new PageImpl<>(
+            List.of(task),
+            pageable,
+            1
+    );
+
+    when(taskRepository.findByTitleContainingIgnoreCase(
+            "Java",
+            pageable
+    )).thenReturn(taskPage);
+
+    Page<Task> result = taskService.searchTasks("Java", pageable);
+
+    assertEquals(1, result.getContent().size());
+    assertEquals("Practice Java", result.getContent().get(0).getTitle());
+
+    verify(taskRepository, times(1))
+            .findByTitleContainingIgnoreCase("Java", pageable);
+}
 
     @Test
     void getTaskById_shouldReturnTaskWhenFound() {

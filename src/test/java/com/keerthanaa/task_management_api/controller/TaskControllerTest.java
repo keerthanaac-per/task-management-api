@@ -24,6 +24,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 @WebMvcTest(TaskController.class)
 class TaskControllerTest {
@@ -65,20 +69,26 @@ class TaskControllerTest {
         when(taskMapper.toResponse(task2))
                 .thenReturn(response2);
 
-       
-        when(taskService.getAllTasks())
-                .thenReturn(List.of(task1, task2));
+        Page<Task> taskPage = new PageImpl<>(
+        List.of(task1, task2),
+        PageRequest.of(0, 10),
+        2
+        );
+
+        when(taskService.searchTasks(any(),any(Pageable.class)))
+        .thenReturn(taskPage);
 
         mockMvc.perform(get("/api/tasks"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].title")
-                        .value("Learn Spring Boot"))
-                .andExpect(jsonPath("$[1].title")
-                        .value("Learn Testing"));
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.content[0].title")
+                .value("Learn Spring Boot"))
+                .andExpect(jsonPath("$.content[1].title")
+                .value("Learn Testing"));
 
-        verify(taskService, times(1)).getAllTasks();
+        verify(taskService, times(1)).searchTasks(any(),any(Pageable.class));
     }
+
 
     @Test
     void getTaskById_shouldReturnTaskWhenFound() throws Exception {
@@ -276,7 +286,6 @@ when(taskMapper.toEntity(any(TaskRequest.class)))
 when(taskService.updateTask(eq(1L), any(Task.class)))
         .thenThrow(new TaskNotFoundException(1L));
 
-
     mockMvc.perform(put("/api/tasks/1")
                     .contentType("application/json")
                     .content("""
@@ -292,5 +301,50 @@ when(taskService.updateTask(eq(1L), any(Task.class)))
 
     verify(taskService, times(1))
             .updateTask(eq(1L), any(Task.class));
+}
+
+@Test
+void getAllTasks_withTitle_shouldReturnMatchingTasks() throws Exception {
+
+    Task task = new Task();
+    task.setId(1L);
+    task.setTitle("Practice Java");
+    task.setDescription("Prepare for backend interviews");
+    task.setCompleted(false);
+
+    TaskResponse response = new TaskResponse();
+    response.setId(1L);
+    response.setTitle("Practice Java");
+    response.setDescription("Prepare for backend interviews");
+    response.setCompleted(false);
+
+    Page<Task> taskPage = new PageImpl<>(
+            List.of(task),
+            PageRequest.of(0, 2),
+            1
+    );
+
+    when(taskService.searchTasks(
+            eq("Java"),
+            any(Pageable.class)
+    )).thenReturn(taskPage);
+
+    when(taskMapper.toResponse(task))
+            .thenReturn(response);
+
+    mockMvc.perform(
+            get("/api/tasks")
+                    .param("title", "Java")
+                    .param("page", "0")
+                    .param("size", "2")
+    )
+    .andExpect(status().isOk())
+    .andExpect(jsonPath("$.content.length()").value(1))
+    .andExpect(jsonPath("$.content[0].title").value("Practice Java"))
+    .andExpect(jsonPath("$.totalElements").value(1))
+    .andExpect(jsonPath("$.totalPages").value(1));
+
+    verify(taskService, times(1))
+            .searchTasks(eq("Java"), any(Pageable.class));
 }
 }
